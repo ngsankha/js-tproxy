@@ -98,6 +98,7 @@
     macro(isFinite, isFinite, "isFinite") \
     macro(isNaN, isNaN, "isNaN") \
     macro(isPrototypeOf, isPrototypeOf, "isPrototypeOf") \
+    macro(isTransparent, isTransparent, "isTransparent") \
     macro(iterate, iterate, "iterate") \
     macro(Infinity, Infinity, "Infinity") \
     macro(int8, int8, "int8") \

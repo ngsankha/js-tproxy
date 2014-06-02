@@ -384,6 +384,13 @@ BaseProxyHandler::slice(JSContext *cx, HandleObject proxy, uint32_t begin, uint3
 }
 
 bool
+BaseProxyHandler::isTransparent(JSContext *cx, HandleObject proxy, bool *bp)
+{
+    *bp = false;
+    return true;
+}
+
+bool
 DirectProxyHandler::getPropertyDescriptor(JSContext *cx, HandleObject proxy, HandleId id,
                                           MutableHandle<PropertyDescriptor> desc)
 {
@@ -615,6 +622,44 @@ DirectProxyHandler::preventExtensions(JSContext *cx, HandleObject proxy)
 {
     RootedObject target(cx, proxy->as<ProxyObject>().target());
     return JSObject::preventExtensions(cx, target);
+}
+
+static JSObject *
+GetDirectProxyHandlerObject(JSObject *proxy)
+{
+    JS_ASSERT(proxy->as<ProxyObject>().handler() == &ScriptedDirectProxyHandler::singleton);
+    return proxy->as<ProxyObject>().extra(0).toObjectOrNull();
+}
+
+bool
+DirectProxyHandler::isTransparent(JSContext *cx, HandleObject proxy, bool *bp)
+{
+    /* Step 1. */
+    RootedObject handler(cx, GetDirectProxyHandlerObject(proxy));
+
+    /* Step 2. */
+    RootedValue trap(cx);
+    if (!JSObject::getProperty(cx, handler, handler, cx->names().isTransparent, &trap))
+        return false;
+
+    /* Step 3. */
+    if (trap.isUndefined()) {
+        *bp = false;
+        return true;
+    }
+
+    /* Step 4. */
+    Value argv[] = {};
+    RootedValue trapResult(cx);
+    if (!Invoke(cx, ObjectValue(*handler), trap, 0, argv, &trapResult))
+        return false;
+
+    /* Step 5. */
+    bool success = ToBoolean(trapResult);
+
+    /* Step 6. */
+    *bp = success;
+    return true;
 }
 
 static bool
@@ -1091,6 +1136,7 @@ class ScriptedDirectProxyHandler : public DirectProxyHandler {
     /* Spidermonkey extensions. */
     virtual bool call(JSContext *cx, HandleObject proxy, const CallArgs &args) MOZ_OVERRIDE;
     virtual bool construct(JSContext *cx, HandleObject proxy, const CallArgs &args) MOZ_OVERRIDE;
+    virtual bool isTransparent(JSContext *cx, HandleObject proxy, bool *bp);
     virtual bool isScripted() MOZ_OVERRIDE { return true; }
 
     static ScriptedDirectProxyHandler singleton;
@@ -1337,16 +1383,6 @@ IdToExposableValue(JSContext *cx, HandleId id, MutableHandleValue value)
         return false;
     value.set(StringValue(name));
     return true;
-}
-
-// Get the [[ProxyHandler]] of a scripted direct proxy.
-//
-// NB: This *must* stay synched with proxy().
-static JSObject *
-GetDirectProxyHandlerObject(JSObject *proxy)
-{
-    JS_ASSERT(proxy->as<ProxyObject>().handler() == &ScriptedDirectProxyHandler::singleton);
-    return proxy->as<ProxyObject>().extra(0).toObjectOrNull();
 }
 
 // TrapGetOwnProperty(O, P)
@@ -2335,6 +2371,12 @@ ScriptedDirectProxyHandler::construct(JSContext *cx, HandleObject proxy, const C
     return true;
 }
 
+bool
+ScriptedDirectProxyHandler::isTransparent(JSContext *cx, HandleObject proxy, bool *bp)
+{
+    return DirectProxyHandler::isTransparent(cx, proxy, bp);
+}
+
 ScriptedDirectProxyHandler ScriptedDirectProxyHandler::singleton;
 
 #define INVOKE_ON_PROTOTYPE(cx, handler, proxy, protoCall)                   \
@@ -2808,6 +2850,12 @@ Proxy::slice(JSContext *cx, HandleObject proxy, uint32_t begin, uint32_t end,
     return handler->slice(cx, proxy, begin, end, result);
 }
 
+/* static */ bool
+Proxy::isTransparent(JSContext *cx, HandleObject proxy, bool *bp)
+{
+    return proxy->as<ProxyObject>().handler()->isTransparent(cx, proxy, bp);
+}
+
 JSObject *
 js::proxy_innerObject(JSObject *obj)
 {
@@ -3113,6 +3161,35 @@ js::NewProxyObject(JSContext *cx, BaseProxyHandler *handler, HandleValue priv, J
 {
     return ProxyObject::New(cx, handler, priv, TaggedProto(proto_), parent_,
                             options);
+}
+
+
+JS_FRIEND_API(JSObject *)
+js::GetIdentityObject(JSContext *cx, JSObject *obj)
+{
+    JSObject *retObj = CheckedUnwrap(obj);
+
+    if (!IsProxy(retObj))
+        return retObj;
+    else {
+        if (cx == NULL) {
+            JSRuntime *rt = JS_GetObjectRuntime(retObj);
+            cx = DefaultJSContext(rt);
+        }
+
+        bool result = false;
+        JS::RootedObject handleEqualsObj(cx, obj);
+
+        if (!Proxy::isTransparent(cx, handleEqualsObj, &result))
+            MOZ_CRASH("Error in isTransparency trap of proxy");
+
+        if (!result)
+            return retObj;
+        else {
+            retObj = GetProxyTargetObject(retObj);
+            return GetIdentityObject(cx, retObj);
+        }
+    }
 }
 
 void

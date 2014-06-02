@@ -610,6 +610,14 @@ CrossCompartmentWrapper::setPrototypeOf(JSContext *cx, HandleObject wrapper,
            NOTHING);
 }
 
+bool
+CrossCompartmentWrapper::isTransparent(JSContext *cx, HandleObject wrapper, bool *bp)
+{
+    RootedObject wrapped(cx, wrappedObject(wrapper));
+    AutoCompartment call(cx, wrapped);
+    return Wrapper::isTransparent(cx, wrapped, bp);
+}
+
 CrossCompartmentWrapper CrossCompartmentWrapper::singleton(0u);
 
 /* Security wrappers. */

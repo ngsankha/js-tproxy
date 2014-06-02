@@ -213,6 +213,7 @@ class JS_FRIEND_API(BaseProxyHandler)
     virtual void finalize(JSFreeOp *fop, JSObject *proxy);
     virtual bool getPrototypeOf(JSContext *cx, HandleObject proxy, MutableHandleObject protop);
     virtual bool setPrototypeOf(JSContext *cx, HandleObject proxy, HandleObject proto, bool *bp);
+    virtual bool isTransparent(JSContext *cx, HandleObject proxy, bool *bp);
 
     // These two hooks must be overridden, or not overridden, in tandem -- no
     // overriding just one!
@@ -282,6 +283,7 @@ class JS_PUBLIC_API(DirectProxyHandler) : public BaseProxyHandler
                              bool *bp) MOZ_OVERRIDE;
     virtual bool getPrototypeOf(JSContext *cx, HandleObject proxy, MutableHandleObject protop);
     virtual bool setPrototypeOf(JSContext *cx, HandleObject proxy, HandleObject proto, bool *bp);
+    virtual bool isTransparent(JSContext *cx, HandleObject proxy, bool *bp);
     virtual bool objectClassIs(HandleObject obj, ESClassValue classValue,
                                JSContext *cx) MOZ_OVERRIDE;
     virtual const char *className(JSContext *cx, HandleObject proxy) MOZ_OVERRIDE;
@@ -342,6 +344,7 @@ class Proxy
     static bool defaultValue(JSContext *cx, HandleObject obj, JSType hint, MutableHandleValue vp);
     static bool getPrototypeOf(JSContext *cx, HandleObject proxy, MutableHandleObject protop);
     static bool setPrototypeOf(JSContext *cx, HandleObject proxy, HandleObject proto, bool *bp);
+    static bool isTransparent(JSContext *cx, HandleObject proxy, bool *bp);
 
     static bool watch(JSContext *cx, HandleObject proxy, HandleId id, HandleObject callable);
     static bool unwatch(JSContext *cx, HandleObject proxy, HandleId id);
@@ -396,6 +399,9 @@ GetProxyTargetObject(JSObject *obj)
     JS_ASSERT(IsProxy(obj));
     return GetProxyPrivate(obj).toObjectOrNull();
 }
+
+extern JS_FRIEND_API(JSObject *)
+GetIdentityObject(JSContext *cx, JSObject *obj);
 
 inline const Value &
 GetProxyExtra(JSObject *obj, size_t n)

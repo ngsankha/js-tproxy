@@ -149,6 +149,7 @@ class JS_FRIEND_API(CrossCompartmentWrapper) : public Wrapper
                                 MutableHandleObject protop) MOZ_OVERRIDE;
     virtual bool setPrototypeOf(JSContext *cx, HandleObject proxy, HandleObject proto,
                                 bool *bp) MOZ_OVERRIDE;
+    virtual bool isTransparent(JSContext *cx, HandleObject wrapper, bool *bp);
 
     static CrossCompartmentWrapper singleton;
     static CrossCompartmentWrapper singletonWithPrototype;
