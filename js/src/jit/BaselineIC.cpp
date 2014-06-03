@@ -1915,6 +1915,12 @@ DoCompareFallback(JSContext *cx, BaselineFrame *frame, ICCompare_Fallback *stub_
             return true;
         }
 
+        // Prevent the Baseline compiler from generating ICs for object-object
+        // comparisions. This will ensure that the VM call takes place for all
+        // kinds of object comparisions including proxies. So we can evaluate
+        // if a proxy is a transparent one in the Baseline compiler code.
+
+        /*
         if (lhs.isObject() && rhs.isObject()) {
             JS_ASSERT(!stub->hasStub(ICStub::Compare_Object));
             IonSpew(IonSpew_BaselineIC, "  Generating %s(Object, Object) stub", js_CodeName[op]);
@@ -1926,6 +1932,7 @@ DoCompareFallback(JSContext *cx, BaselineFrame *frame, ICCompare_Fallback *stub_
             stub->addNewStub(objectStub);
             return true;
         }
+        */
 
         if ((lhs.isObject() || lhs.isNull() || lhs.isUndefined()) &&
             (rhs.isObject() || rhs.isNull() || rhs.isUndefined()) &&
