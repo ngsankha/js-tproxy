@@ -40,6 +40,10 @@
 #include "vm/Shape.h"
 #include "vm/TraceLogging.h"
 
+#if JS_LOGGING
+#include "Logging.h"
+#endif
+
 #include "jsatominlines.h"
 #include "jsboolinlines.h"
 #include "jsfuninlines.h"
@@ -70,6 +74,13 @@ LooseEqualityOp(JSContext *cx, InterpreterRegs &regs)
     if (!LooselyEqual(cx, lval, rval, &cond))
         return false;
     cond = (cond == Eq);
+
+#if JS_LOGGING
+    RootedValue rhs(cx, rval);
+    RootedValue lhs(cx, lval);
+    Logging::logger->log(cx, lhs, rhs, cond);
+#endif
+
     regs.sp--;
     regs.sp[-1].setBoolean(cond);
     return true;

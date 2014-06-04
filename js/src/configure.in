@@ -3010,6 +3010,20 @@ if test "$ENABLE_YARR"; then
 fi
 
 dnl ========================================================
+dnl = Enable logging
+dnl ========================================================
+MOZ_ARG_ENABLE_BOOL(logging,
+[  --enable-logging   Enable logging],
+    ENABLE_LOGGING=1,
+    ENABLE_LOGGING= )
+
+AC_SUBST(ENABLE_LOGGING)
+
+if test "$ENABLE_LOGGING"; then
+    AC_DEFINE(JS_LOGGING)
+fi
+
+dnl ========================================================
 dnl = Enable any treating of compile warnings as errors
 dnl ========================================================
 MOZ_ARG_DISABLE_BOOL(warnings-as-errors,

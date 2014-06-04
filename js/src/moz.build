@@ -230,6 +230,11 @@ if CONFIG['ENABLE_TRACE_LOGGING']:
         'vm/TraceLogging.cpp',
     ]
 
+if CONFIG['ENABLE_LOGGING']:
+    SOURCES += [
+        'Logging.cpp',
+    ]
+
 if CONFIG['ENABLE_YARR']:
     UNIFIED_SOURCES += [
         'yarr/PageBlock.cpp',
