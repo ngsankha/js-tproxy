@@ -3180,8 +3180,7 @@ js::GetIdentityObject(JSContext *cx, JSObject *obj)
         bool result = false;
         JS::RootedObject handleEqualsObj(cx, obj);
 
-        if (!Proxy::isTransparent(cx, handleEqualsObj, &result))
-            MOZ_CRASH("Error in isTransparency trap of proxy");
+        Proxy::isTransparent(cx, handleEqualsObj, &result);
 
         if (!result)
             return retObj;
