@@ -19,6 +19,10 @@
 
 #include "jsobjinlines.h"
 
+#if JS_LOGGING
+#include "Logging.h"
+#endif
+
 using namespace js;
 
 using mozilla::NumberEqualsInt32;
@@ -808,14 +812,30 @@ HashableValue::hash() const
     // HashableValue::setValue normalizes values so that the SameValue relation
     // on HashableValues is the same as the == relationship on
     // value.data.asBits.
-    return value.asRawBits();
+
+    if (value.isObject())
+        return DefaultHasher<JSObject *>::hash(GetIdentityObject(NULL, &value.toObject()));
+    else
+        return value.asRawBits();
 }
 
 bool
 HashableValue::operator==(const HashableValue &other) const
 {
     // Two HashableValues are equal if they have equal bits.
-    bool b = (value.asRawBits() == other.value.asRawBits());
+    JS::Value val;
+    JS::Value otherVal;
+    if (value.isObject())
+        val = OBJECT_TO_JSVAL(GetIdentityObject(NULL, &value.toObject()));
+    else
+        val = value;
+
+    if (other.value.isObject())
+        otherVal = OBJECT_TO_JSVAL(GetIdentityObject(NULL, &other.value.toObject()));
+    else
+        otherVal = other.value;
+
+    bool b = (val == otherVal);
 
 #ifdef DEBUG
     bool same;
