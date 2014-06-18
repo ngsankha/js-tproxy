@@ -3101,17 +3101,38 @@ js::proxy_Slice(JSContext *cx, HandleObject proxy, uint32_t begin, uint32_t end,
                     callOp,                                     \
                     constructOp)
 
+#define TPROXY_CLASS(callOp, constructOp)                                  \
+    TPROXY_CLASS_DEF("TransparentProxy",                                   \
+                    0, /* additional slots */                              \
+                    JSCLASS_HAS_CACHED_PROTO(JSProto_TransparentProxy),    \
+                    callOp,                                                \
+                    constructOp)
+
 const Class js::ProxyObject::uncallableClass_ = PROXY_CLASS(nullptr, nullptr);
 const Class js::ProxyObject::callableClass_ = PROXY_CLASS(proxy_Call, proxy_Construct);
 
 const Class* const js::CallableProxyClassPtr = &ProxyObject::callableClass_;
 const Class* const js::UncallableProxyClassPtr = &ProxyObject::uncallableClass_;
 
+const Class js::TransparentProxyObject::uncallableClass_ = TPROXY_CLASS(nullptr, nullptr);
+const Class js::TransparentProxyObject::callableClass_ = TPROXY_CLASS(proxy_Call, proxy_Construct);
+
+const Class* const js::CallableTransparentProxyClassPtr = &TransparentProxyObject::callableClass_;
+const Class* const js::UncallableTransparentProxyClassPtr = &TransparentProxyObject::uncallableClass_;
+
 JS_FRIEND_API(JSObject *)
 js::NewProxyObject(JSContext *cx, BaseProxyHandler *handler, HandleValue priv, JSObject *proto_,
                    JSObject *parent_, const ProxyOptions &options)
 {
     return ProxyObject::New(cx, handler, priv, TaggedProto(proto_), parent_,
+                            options);
+}
+
+JS_FRIEND_API(JSObject *)
+js::NewTransparentProxyObject(JSContext *cx, BaseProxyHandler *handler, HandleValue priv,
+                   JSObject *proto_, JSObject *parent_, const ProxyOptions &options)
+{
+    return TransparentProxyObject::New(cx, handler, priv, TaggedProto(proto_), parent_,
                             options);
 }
 
@@ -3147,6 +3168,35 @@ proxy(JSContext *cx, unsigned argc, jsval *vp)
         return false;
     RootedValue priv(cx, ObjectValue(*target));
     ProxyOptions options;
+    options.selectDefaultClass(target->isCallable());
+    ProxyObject *proxy =
+        ProxyObject::New(cx, &ScriptedDirectProxyHandler::singleton,
+                         priv, TaggedProto(TaggedProto::LazyProto), cx->global(),
+                         options);
+    if (!proxy)
+        return false;
+    proxy->setExtra(0, ObjectOrNullValue(handler));
+    args.rval().setObject(*proxy);
+    return true;
+}
+
+static bool
+tproxy(JSContext *cx, unsigned argc, jsval *vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    if (args.length() < 2) {
+        JS_ReportErrorNumber(cx, js_GetErrorMessage, nullptr, JSMSG_MORE_ARGS_NEEDED,
+                             "TransparentProxy", "1", "s");
+        return false;
+    }
+    RootedObject target(cx, NonNullObject(cx, args[0]));
+    if (!target)
+        return false;
+    RootedObject handler(cx, NonNullObject(cx, args[1]));
+    if (!handler)
+        return false;
+    RootedValue priv(cx, ObjectValue(*target));
+    TransparentProxyOptions options;
     options.selectDefaultClass(target->isCallable());
     ProxyObject *proxy =
         ProxyObject::New(cx, &ScriptedDirectProxyHandler::singleton,
@@ -3245,6 +3295,60 @@ proxy_createFunction(JSContext *cx, unsigned argc, Value *vp)
     return true;
 }
 
+static bool
+tproxy_createFunction(JSContext *cx, unsigned argc, Value *vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    if (args.length() < 2) {
+        JS_ReportErrorNumber(cx, js_GetErrorMessage, nullptr, JSMSG_MORE_ARGS_NEEDED,
+                             "createFunction", "1", "");
+        return false;
+    }
+    RootedObject handler(cx, NonNullObject(cx, args[0]));
+    if (!handler)
+        return false;
+    RootedObject proto(cx), parent(cx);
+    parent = args.callee().getParent();
+    proto = parent->global().getOrCreateFunctionPrototype(cx);
+    if (!proto)
+        return false;
+    parent = proto->getParent();
+
+    RootedObject call(cx, ValueToCallable(cx, args[1], args.length() - 2));
+    if (!call)
+        return false;
+    RootedObject construct(cx, nullptr);
+    if (args.length() > 2) {
+        construct = ValueToCallable(cx, args[2], args.length() - 3);
+        if (!construct)
+            return false;
+    } else {
+        construct = call;
+    }
+
+    // Stash the call and construct traps on a holder object that we can stick
+    // in a slot on the proxy.
+    RootedObject ccHolder(cx, JS_NewObjectWithGivenProto(cx, Jsvalify(&CallConstructHolder),
+                                                         js::NullPtr(), cx->global()));
+    if (!ccHolder)
+        return false;
+    ccHolder->setReservedSlot(0, ObjectValue(*call));
+    ccHolder->setReservedSlot(1, ObjectValue(*construct));
+
+    RootedValue priv(cx, ObjectValue(*handler));
+    TransparentProxyOptions options;
+    options.selectDefaultClass(true);
+    JSObject *proxy =
+        ProxyObject::New(cx, &ScriptedIndirectProxyHandler::singleton,
+                         priv, TaggedProto(proto), parent, options);
+    if (!proxy)
+        return false;
+    proxy->as<ProxyObject>().setExtra(0, ObjectValue(*ccHolder));
+
+    args.rval().setObject(*proxy);
+    return true;
+}
+
 JS_FRIEND_API(JSObject *)
 js_InitProxyClass(JSContext *cx, HandleObject obj)
 {
@@ -3268,5 +3372,31 @@ js_InitProxyClass(JSContext *cx, HandleObject obj)
     }
 
     global->setConstructor(JSProto_Proxy, ObjectValue(*ctor));
+    return ctor;
+}
+
+JS_FRIEND_API(JSObject *)
+js_InitTransparentProxyClass(JSContext *cx, HandleObject obj)
+{
+    static const JSFunctionSpec static_methods[] = {
+        JS_FN("create",         proxy_create,          2, 0),
+        JS_FN("createFunction", tproxy_createFunction,  3, 0),
+        JS_FS_END
+    };
+
+    Rooted<GlobalObject*> global(cx, &obj->as<GlobalObject>());
+    RootedFunction ctor(cx);
+    ctor = global->createConstructor(cx, tproxy, cx->names().TransparentProxy, 2);
+    if (!ctor)
+        return nullptr;
+
+    if (!JS_DefineFunctions(cx, ctor, static_methods))
+        return nullptr;
+    if (!JS_DefineProperty(cx, obj, "TransparentProxy", ctor, 0,
+                           JS_PropertyStub, JS_StrictPropertyStub)) {
+        return nullptr;
+    }
+
+    global->setConstructor(JSProto_TransparentProxy, ObjectValue(*ctor));
     return ctor;
 }

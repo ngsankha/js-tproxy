@@ -402,6 +402,7 @@ struct JSClass {
 #define JSCLASS_INTERNAL_FLAG3          (1<<(JSCLASS_HIGH_FLAGS_SHIFT+3))
 
 #define JSCLASS_IS_PROXY                (1<<(JSCLASS_HIGH_FLAGS_SHIFT+4))
+#define JSCLASS_IS_TRANSPARENT_PROXY    (1<<(JSCLASS_HIGH_FLAGS_SHIFT+5))
 
 // Bit 22 unused.
 
@@ -481,6 +482,10 @@ struct Class
 
     bool isProxy() const {
         return flags & JSCLASS_IS_PROXY;
+    }
+
+    bool isTransparentProxy() const {
+        return flags & JSCLASS_IS_TRANSPARENT_PROXY;
     }
 
     bool isDOMClass() const {

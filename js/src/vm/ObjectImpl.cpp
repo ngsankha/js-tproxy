@@ -302,6 +302,12 @@ js::ObjectImpl::isProxy() const
 }
 
 bool
+js::ObjectImpl::isTransparentProxy() const
+{
+    return asObjectPtr()->is<TransparentProxyObject>();
+}
+
+bool
 js::ObjectImpl::slotInRange(uint32_t slot, SentinelAllowed sentinel) const
 {
     uint32_t capacity = numFixedSlots() + numDynamicSlots();

@@ -292,8 +292,64 @@ namespace js {
         }                                                                               \
     }
 
+#define TPROXY_CLASS_WITH_EXT(name, extraSlots, flags, callOp, constructOp, ext)        \
+    {                                                                                   \
+        name,                                                                           \
+        js::Class::NON_NATIVE |                                                         \
+            JSCLASS_IS_PROXY |                                                          \
+            JSCLASS_IS_TRANSPARENT_PROXY |                                              \
+            JSCLASS_IMPLEMENTS_BARRIERS |                                               \
+            JSCLASS_HAS_RESERVED_SLOTS(js::PROXY_MINIMUM_SLOTS + (extraSlots)) |        \
+            flags,                                                                      \
+        JS_PropertyStub,         /* addProperty */                                      \
+        JS_DeletePropertyStub,   /* delProperty */                                      \
+        JS_PropertyStub,         /* getProperty */                                      \
+        JS_StrictPropertyStub,   /* setProperty */                                      \
+        JS_EnumerateStub,                                                               \
+        JS_ResolveStub,                                                                 \
+        js::proxy_Convert,                                                              \
+        js::proxy_Finalize,      /* finalize    */                                      \
+        callOp,                  /* call        */                                      \
+        js::proxy_HasInstance,   /* hasInstance */                                      \
+        constructOp,             /* construct   */                                      \
+        js::proxy_Trace,         /* trace       */                                      \
+        JS_NULL_CLASS_SPEC,                                                             \
+        ext,                                                                            \
+        {                                                                               \
+            js::proxy_LookupGeneric,                                                    \
+            js::proxy_LookupProperty,                                                   \
+            js::proxy_LookupElement,                                                    \
+            js::proxy_DefineGeneric,                                                    \
+            js::proxy_DefineProperty,                                                   \
+            js::proxy_DefineElement,                                                    \
+            js::proxy_GetGeneric,                                                       \
+            js::proxy_GetProperty,                                                      \
+            js::proxy_GetElement,                                                       \
+            js::proxy_SetGeneric,                                                       \
+            js::proxy_SetProperty,                                                      \
+            js::proxy_SetElement,                                                       \
+            js::proxy_GetGenericAttributes,                                             \
+            js::proxy_SetGenericAttributes,                                             \
+            js::proxy_DeleteProperty,                                                   \
+            js::proxy_DeleteElement,                                                    \
+            js::proxy_Watch, js::proxy_Unwatch,                                         \
+            js::proxy_Slice,                                                            \
+            nullptr,             /* enumerate       */                                  \
+            nullptr,             /* thisObject      */                                  \
+        }                                                                               \
+    }
+
 #define PROXY_CLASS_DEF(name, extraSlots, flags, callOp, constructOp)   \
   PROXY_CLASS_WITH_EXT(name, extraSlots, flags, callOp, constructOp,    \
+                       PROXY_MAKE_EXT(                                  \
+                         nullptr, /* outerObject */                     \
+                         nullptr, /* innerObject */                     \
+                         nullptr, /* iteratorObject */                  \
+                         false    /* isWrappedNative */                 \
+                       ))
+
+#define TPROXY_CLASS_DEF(name, extraSlots, flags, callOp, constructOp)   \
+  TPROXY_CLASS_WITH_EXT(name, extraSlots, flags, callOp, constructOp,    \
                        PROXY_MAKE_EXT(                                  \
                          nullptr, /* outerObject */                     \
                          nullptr, /* innerObject */                     \
