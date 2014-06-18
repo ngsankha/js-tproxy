@@ -3136,6 +3136,24 @@ js::NewTransparentProxyObject(JSContext *cx, BaseProxyHandler *handler, HandleVa
                             options);
 }
 
+JS_FRIEND_API(JSObject *)
+js::GetIdentityObject(JSContext *cx, JSObject *obj)
+{
+    JSObject *retObj = CheckedUnwrap(obj);
+
+    if (!IsTransparentProxy(retObj))
+        return retObj;
+    else {
+        if (cx == NULL) {
+            JSRuntime *rt = JS_GetObjectRuntime(retObj);
+            cx = DefaultJSContext(rt);
+        }
+
+        retObj = GetProxyTargetObject(retObj);
+        return GetIdentityObject(cx, retObj);
+    }
+}
+
 void
 ProxyObject::renew(JSContext *cx, BaseProxyHandler *handler, Value priv)
 {

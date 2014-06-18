@@ -405,6 +405,9 @@ GetProxyTargetObject(JSObject *obj)
     return GetProxyPrivate(obj).toObjectOrNull();
 }
 
+extern JS_FRIEND_API(JSObject *)
+GetIdentityObject(JSContext *cx, JSObject *obj);
+
 inline const Value &
 GetProxyExtra(JSObject *obj, size_t n)
 {

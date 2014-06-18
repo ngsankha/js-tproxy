@@ -678,8 +678,8 @@ js::LooselyEqual(JSContext *cx, const Value &lval, const Value &rval, bool *resu
         }
 
         if (lval.isObject()) {
-            JSObject *l = &lval.toObject();
-            JSObject *r = &rval.toObject();
+            JSObject *l = GetIdentityObject(cx, &lval.toObject());
+            JSObject *r = GetIdentityObject(cx, &rval.toObject());
             *result = l == r;
             return true;
         }
@@ -732,7 +732,9 @@ js::StrictlyEqual(JSContext *cx, const Value &lref, const Value &rref, bool *equ
             return true;
         }
         if (lval.isObject()) {
-            *equal = lval.toObject() == rval.toObject();
+            JSObject *l = GetIdentityObject(cx, &lval.toObject());
+            JSObject *r = GetIdentityObject(cx, &rval.toObject());
+            *equal = l == r;
             return true;
         }
         if (lval.isUndefined()) {
