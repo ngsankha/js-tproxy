@@ -27,6 +27,7 @@
 
 #include "jsboolinlines.h"
 #include "jsscriptinlines.h"
+#include "jsproxy.h"
 
 #include "jit/IonFrames-inl.h"
 #include "vm/Interpreter-inl.h"
@@ -1915,7 +1916,8 @@ DoCompareFallback(JSContext *cx, BaselineFrame *frame, ICCompare_Fallback *stub_
             return true;
         }
 
-        if (lhs.isObject() && rhs.isObject()) {
+        if (lhs.isObject() && rhs.isObject() &&
+            !IsTransparentProxy(&lhs.toObject()) && !IsTransparentProxy(&rhs.toObject())) {
             JS_ASSERT(!stub->hasStub(ICStub::Compare_Object));
             IonSpew(IonSpew_BaselineIC, "  Generating %s(Object, Object) stub", js_CodeName[op]);
             ICCompare_Object::Compiler compiler(cx, op);
@@ -2079,7 +2081,7 @@ ICCompare_Object::Compiler::generateStubCode(MacroAssembler &masm)
     Register right = masm.extractObject(R1, ExtractTemp1);
 
     Label ifTrue;
-    masm.branchPtr(JSOpToCondition(op, /* signed = */true), left, right, &ifTrue);
+    masm.branchPtr(JSOpToCondition(op, /* signed = */ true), left, right, &ifTrue);
 
     masm.moveValue(BooleanValue(false), R0);
     EmitReturnFromIC(masm);
