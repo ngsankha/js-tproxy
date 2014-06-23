@@ -1036,6 +1036,15 @@ obj_isSealed(JSContext *cx, unsigned argc, Value *vp)
 }
 
 static bool
+obj_equals(JSContext *cx, unsigned argc, Value *vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+
+    args.rval().setBoolean(args[0].toObject() == args[1].toObject());
+    return true;
+}
+
+static bool
 ProtoGetter(JSContext *cx, unsigned argc, Value *vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
@@ -1147,5 +1156,6 @@ const JSFunctionSpec js::object_static_methods[] = {
     JS_FN("isFrozen",                  obj_isFrozen,                1,0),
     JS_FN("seal",                      obj_seal,                    1,0),
     JS_FN("isSealed",                  obj_isSealed,                1,0),
+    JS_FN("equals",                    obj_equals,                  1,0),
     JS_FS_END
 };
