@@ -103,7 +103,7 @@ class WeakMapBase {
 };
 
 template <class Key, class Value,
-          class HashPolicy = DefaultHasher<Key> >
+          class HashPolicy = WeakMapHasher<Key> >
 class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, public WeakMapBase
 {
   public:

@@ -548,6 +548,27 @@ struct PointerHasher
     }
 };
 
+template <class Key>
+struct WeakMapHasher
+{
+    typedef Key Lookup;
+    static HashNumber hash(const Lookup &l) {
+        // Hash if can implicitly cast to hash number type.
+        return OBJECT_TO_JSVAL(GetIdentityObject(NULL, l)).asRawBits();
+    }
+    static bool match(const Key &k, const Lookup &l) {
+        // Use builtin or overloaded operator==.
+        return GetIdentityObject(NULL, k) == GetIdentityObject(NULL, l);
+    }
+    static void rekey(Key &k, const Key& newKey) {
+        k = newKey;
+    }
+};
+
+template <class T>
+struct WeakMapHasher<T *> : PointerHasher<T *, mozilla::tl::FloorLog2<sizeof(void *)>::value>
+{};
+
 // Default hash policy: just use the 'lookup' value. This of course only
 // works if the lookup value is integral. HashTable applies ScrambleHashCode to
 // the result of the 'hash' which means that it is 'ok' if the lookup value is

@@ -939,6 +939,9 @@ template <> struct Unbarriered<RelocatableValue> { typedef Value type; };
 template <typename S> struct Unbarriered< DefaultHasher< PreBarriered<S> > > {
     typedef DefaultHasher<S *> type;
 };
+template <typename S> struct Unbarriered< WeakMapHasher< PreBarriered<S> > > {
+    typedef WeakMapHasher<S *> type;
+};
 
 } /* namespace js */
 
