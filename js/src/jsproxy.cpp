@@ -3223,6 +3223,10 @@ tproxy(JSContext *cx, unsigned argc, jsval *vp)
     if (!proxy)
         return false;
     proxy->setExtra(0, ObjectOrNullValue(handler));
+
+    if (args.length() > 2)
+        proxy->setExtra(1, ObjectOrNullValue(&args[2].toObject()));
+
     args.rval().setObject(*proxy);
     return true;
 }
@@ -3252,6 +3256,38 @@ proxy_create(JSContext *cx, unsigned argc, Value *vp)
     RootedValue priv(cx, ObjectValue(*handler));
     JSObject *proxy = NewProxyObject(cx, &ScriptedIndirectProxyHandler::singleton,
                                      priv, proto, parent);
+    if (!proxy)
+        return false;
+
+    args.rval().setObject(*proxy);
+    return true;
+}
+
+static bool
+tproxy_create(JSContext *cx, unsigned argc, Value *vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    if (args.length() < 1) {
+        JS_ReportErrorNumber(cx, js_GetErrorMessage, nullptr, JSMSG_MORE_ARGS_NEEDED,
+                             "create", "0", "s");
+        return false;
+    }
+    JSObject *handler = NonNullObject(cx, args[0]);
+    if (!handler)
+        return false;
+    JSObject *proto, *parent = nullptr;
+    if (args.get(1).isObject()) {
+        proto = &args[1].toObject();
+        parent = proto->getParent();
+    } else {
+        JS_ASSERT(IsFunctionObject(&args.callee()));
+        proto = nullptr;
+    }
+    if (!parent)
+        parent = args.callee().getParent();
+    RootedValue priv(cx, ObjectValue(*handler));
+    JSObject *proxy = NewTransparentProxyObject(cx, &ScriptedIndirectProxyHandler::singleton,
+                                                priv, proto, parent);
     if (!proxy)
         return false;
 
@@ -3397,7 +3433,7 @@ JS_FRIEND_API(JSObject *)
 js_InitTransparentProxyClass(JSContext *cx, HandleObject obj)
 {
     static const JSFunctionSpec static_methods[] = {
-        JS_FN("create",         proxy_create,          2, 0),
+        JS_FN("create",         tproxy_create,          2, 0),
         JS_FN("createFunction", tproxy_createFunction,  3, 0),
         JS_FS_END
     };

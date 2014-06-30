@@ -1036,11 +1036,41 @@ obj_isSealed(JSContext *cx, unsigned argc, Value *vp)
 }
 
 static bool
+obj_capability_equals(JSContext *cx, JSObject *lhs, JSObject *rhs, JSObject *secret, MutableHandleValue res)
+{
+    bool doRefEq = false;
+    if (IsTransparentProxy(lhs)) {
+        JSObject *capability = &lhs->as<ProxyObject>().extra(1).toObject();
+        if (capability == secret)
+            doRefEq = true;
+    }
+    if (IsTransparentProxy(rhs)) {
+        JSObject *capability = &rhs->as<ProxyObject>().extra(1).toObject();
+        if (capability == secret)
+            doRefEq = true;
+    }
+    if (doRefEq)
+        res.setBoolean(lhs == rhs);
+    else
+        res.setBoolean(GetIdentityObject(cx, lhs) == GetIdentityObject(cx, rhs));
+
+    return true;
+}
+
+static bool
 obj_equals(JSContext *cx, unsigned argc, Value *vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
+    if (args.length() < 2) {
+        JS_ReportErrorNumber(cx, js_GetErrorMessage, nullptr, JSMSG_MORE_ARGS_NEEDED,
+                             "Object.equals", "1", "s");
+        return false;
+    }
 
-    args.rval().setBoolean(args[0].toObject() == args[1].toObject());
+    if (args.length() > 2)
+        return obj_capability_equals(cx, &args[0].toObject(), &args[1].toObject(), &args[2].toObject(), args.rval());
+
+    args.rval().setBoolean(GetIdentityObject(cx, &args[0].toObject()) == GetIdentityObject(cx, &args[1].toObject()));
     return true;
 }
 
