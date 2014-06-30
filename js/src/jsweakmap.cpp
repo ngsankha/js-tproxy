@@ -394,7 +394,7 @@ SetWeakMapEntryInternal(JSContext *cx, Handle<WeakMapObject*> mapObj,
 
     JS_ASSERT(key->compartment() == mapObj->compartment());
     JS_ASSERT_IF(value.isObject(), value.toObject().compartment() == mapObj->compartment());
-    if (!map->put(key, value)) {
+    if (!map->put(key.get(), value)) {
         JS_ReportOutOfMemory(cx);
         return false;
     }
@@ -502,7 +502,7 @@ JS::GetWeakMapEntry(JSContext *cx, HandleObject mapObj, HandleObject key,
     ObjectValueMap *map = mapObj->as<WeakMapObject>().getMap();
     if (!map)
         return true;
-    if (ObjectValueMap::Ptr ptr = map->lookup(key)) {
+    if (ObjectValueMap::Ptr ptr = map->lookup(key.get())) {
         // Read barrier to prevent an incorrectly gray value from escaping the
         // weak map. See the comment before UnmarkGrayChildren in gc/Marking.cpp
         ExposeValueToActiveJS(ptr->value().get());

@@ -19,6 +19,7 @@
 #include "mozilla/MemoryReporting.h"
 
 #include "gc/Barrier.h"
+#include "jsproxy.h"
 #include "gc/Marking.h"
 #include "js/GCAPI.h"
 #include "js/HeapAPI.h"
@@ -1176,15 +1177,15 @@ js::RootedBase<JSObject*>::as() const
  * abundance of address-of operators to identity. Hence this overload.
  */
 static MOZ_ALWAYS_INLINE bool
-operator==(const JSObject &lhs, const JSObject &rhs)
+operator==(JSObject &lhs, JSObject &rhs)
 {
-    return &lhs == &rhs;
+    return js::GetIdentityObject(NULL, &lhs) == js::GetIdentityObject(NULL, &rhs);
 }
 
 static MOZ_ALWAYS_INLINE bool
-operator!=(const JSObject &lhs, const JSObject &rhs)
+operator!=(JSObject &lhs, JSObject &rhs)
 {
-    return &lhs != &rhs;
+    return js::GetIdentityObject(NULL, &lhs) != js::GetIdentityObject(NULL, &rhs);
 }
 
 struct JSObject_Slots2 : JSObject { js::Value fslots[2]; };
