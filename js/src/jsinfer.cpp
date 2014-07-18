@@ -2422,11 +2422,11 @@ struct types::ArrayTableKey : public DefaultHasher<types::ArrayTableKey>
       : type(type), proto(proto)
     {}
 
-    static inline uint32_t hash(const ArrayTableKey &v) {
+    static inline uint32_t hash(const ArrayTableKey &v, bool useIdentity = true) {
         return (uint32_t) (v.type.raw() ^ ((uint32_t)(size_t)v.proto >> 2));
     }
 
-    static inline bool match(const ArrayTableKey &v1, const ArrayTableKey &v2) {
+    static inline bool match(const ArrayTableKey &v1, const ArrayTableKey &v2, bool useIdentity = true) {
         return v1.type == v2.type && v1.proto == v2.proto;
     }
 };
@@ -2540,13 +2540,13 @@ struct types::ObjectTableKey
         {}
     };
 
-    static inline HashNumber hash(const Lookup &lookup) {
+    static inline HashNumber hash(const Lookup &lookup, bool useIdentity = true) {
         return (HashNumber) (JSID_BITS(lookup.properties[lookup.nproperties - 1].id) ^
                              lookup.nproperties ^
                              lookup.nfixed);
     }
 
-    static inline bool match(const ObjectTableKey &v, const Lookup &lookup) {
+    static inline bool match(const ObjectTableKey &v, const Lookup &lookup, bool useIdentity = true) {
         if (lookup.nproperties != v.nproperties || lookup.nfixed != v.nfixed)
             return false;
         for (size_t i = 0; i < lookup.nproperties; i++) {
@@ -3782,7 +3782,7 @@ JSObject::makeLazyType(JSContext *cx, HandleObject obj)
 }
 
 /* static */ inline HashNumber
-TypeObjectWithNewScriptEntry::hash(const Lookup &lookup)
+TypeObjectWithNewScriptEntry::hash(const Lookup &lookup, bool useIdentity = true)
 {
     return PointerHasher<JSObject *, 3>::hash(lookup.hashProto.raw()) ^
            PointerHasher<const Class *, 3>::hash(lookup.clasp) ^
@@ -3790,7 +3790,7 @@ TypeObjectWithNewScriptEntry::hash(const Lookup &lookup)
 }
 
 /* static */ inline bool
-TypeObjectWithNewScriptEntry::match(const TypeObjectWithNewScriptEntry &key, const Lookup &lookup)
+TypeObjectWithNewScriptEntry::match(const TypeObjectWithNewScriptEntry &key, const Lookup &lookup, bool useIdentity = true)
 {
     return key.object->proto() == lookup.matchProto &&
            key.object->clasp() == lookup.clasp &&

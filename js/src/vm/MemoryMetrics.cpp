@@ -44,7 +44,7 @@ MemoryReportingSundriesThreshold()
 }
 
 /* static */ HashNumber
-InefficientNonFlatteningStringHashPolicy::hash(const Lookup &l)
+InefficientNonFlatteningStringHashPolicy::hash(const Lookup &l, bool useIdentity = true)
 {
     ScopedJSFreePtr<jschar> ownedChars;
     const jschar *chars;
@@ -61,7 +61,7 @@ InefficientNonFlatteningStringHashPolicy::hash(const Lookup &l)
 }
 
 /* static */ bool
-InefficientNonFlatteningStringHashPolicy::match(const JSString *const &k, const Lookup &l)
+InefficientNonFlatteningStringHashPolicy::match(const JSString *const &k, const Lookup &l, bool useIdentity = true)
 {
     // We can't use js::EqualStrings, because that flattens our strings.
     if (k->length() != l->length())
@@ -91,13 +91,13 @@ InefficientNonFlatteningStringHashPolicy::match(const JSString *const &k, const 
 }
 
 /* static */ HashNumber
-CStringHashPolicy::hash(const Lookup &l)
+CStringHashPolicy::hash(const Lookup &l, bool useIdentity = true)
 {
     return mozilla::HashString(l);
 }
 
 /* static */ bool
-CStringHashPolicy::match(const char *const &k, const Lookup &l)
+CStringHashPolicy::match(const char *const &k, const Lookup &l, bool useIdentity = true)
 {
     return strcmp(k, l) == 0;
 }

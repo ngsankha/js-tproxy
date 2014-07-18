@@ -1474,10 +1474,10 @@ class LIRGraph
     struct ValueHasher
     {
         typedef Value Lookup;
-        static HashNumber hash(const Value &v) {
+        static HashNumber hash(const Value &v, bool useIdentity = true) {
             return HashNumber(v.asRawBits());
         }
-        static bool match(const Value &lhs, const Value &rhs) {
+        static bool match(const Value &lhs, const Value &rhs, bool useIdentity = true) {
             return lhs == rhs;
         }
     };

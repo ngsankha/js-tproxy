@@ -849,8 +849,8 @@ struct StackBaseShape
         this->rawSetter = rawSetter;
     }
 
-    static inline HashNumber hash(const StackBaseShape *lookup);
-    static inline bool match(UnownedBaseShape *key, const StackBaseShape *lookup);
+    static inline HashNumber hash(const StackBaseShape *lookup, bool useIdentity);
+    static inline bool match(UnownedBaseShape *key, const StackBaseShape *lookup, bool useIdentity);
 
     // For RootedGeneric<StackBaseShape*>
     static inline js::ThingRootKind rootKind() { return js::THING_ROOT_CUSTOM; }
@@ -1441,8 +1441,8 @@ struct InitialShapeEntry
 
     inline Lookup getLookup() const;
 
-    static inline HashNumber hash(const Lookup &lookup);
-    static inline bool match(const InitialShapeEntry &key, const Lookup &lookup);
+    static inline HashNumber hash(const Lookup &lookup, bool useIdentity);
+    static inline bool match(const InitialShapeEntry &key, const Lookup &lookup, bool useIdentity);
     static void rekey(InitialShapeEntry &k, const InitialShapeEntry& newKey) { k = newKey; }
 };
 

@@ -21,8 +21,8 @@ struct ShapeHasher {
     typedef Shape *Key;
     typedef StackShape Lookup;
 
-    static inline HashNumber hash(const Lookup &l);
-    static inline bool match(Key k, const Lookup &l);
+    static inline HashNumber hash(const Lookup &l, bool useIdentity);
+    static inline bool match(Key k, const Lookup &l, bool useIdentity);
 };
 
 typedef HashSet<Shape *, ShapeHasher, SystemAllocPolicy> KidsHash;

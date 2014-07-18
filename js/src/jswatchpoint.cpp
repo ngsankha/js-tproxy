@@ -18,7 +18,7 @@ using namespace js;
 using namespace js::gc;
 
 inline HashNumber
-DefaultHasher<WatchKey>::hash(const Lookup &key)
+DefaultHasher<WatchKey>::hash(const Lookup &key, bool useIdentity = true)
 {
     return DefaultHasher<JSObject *>::hash(key.object.get()) ^ HashId(key.id.get());
 }

@@ -96,13 +96,13 @@ struct AllocationIntegrityState
         uint32_t index;
 
         typedef IntegrityItem Lookup;
-        static HashNumber hash(const IntegrityItem &item) {
+        static HashNumber hash(const IntegrityItem &item, bool useIdentity = true) {
             HashNumber hash = item.alloc.hash();
             hash = mozilla::RotateLeft(hash, 4) ^ item.vreg;
             hash = mozilla::RotateLeft(hash, 4) ^ HashNumber(item.block->mir()->id());
             return hash;
         }
-        static bool match(const IntegrityItem &one, const IntegrityItem &two) {
+        static bool match(const IntegrityItem &one, const IntegrityItem &two, bool useIdentity = true) {
             return one.block == two.block
                 && one.vreg == two.vreg
                 && one.alloc == two.alloc;

@@ -89,11 +89,11 @@ class HashMap
     //
     // Also see the definition of Ptr in HashTable above (with T = Entry).
     typedef typename Impl::Ptr Ptr;
-    Ptr lookup(const Lookup &l) const                 { return impl.lookup(l); }
+    Ptr lookup(const Lookup &l, bool useIdentity = true) const                 { return impl.lookup(l, useIdentity); }
 
     // Like lookup, but does not assert if two threads call lookup at the same
     // time. Only use this method when none of the threads will modify the map.
-    Ptr readonlyThreadsafeLookup(const Lookup &l) const { return impl.readonlyThreadsafeLookup(l); }
+    Ptr readonlyThreadsafeLookup(const Lookup &l, bool useIdentity = true) const { return impl.readonlyThreadsafeLookup(l, useIdentity); }
 
     // Assuming |p.found()|, remove |*p|.
     void remove(Ptr p)                                { impl.remove(p); }
@@ -132,8 +132,8 @@ class HashMap
     //    assert(p->key == 3);
     //    char val = p->value;
     typedef typename Impl::AddPtr AddPtr;
-    AddPtr lookupForAdd(const Lookup &l) const {
-        return impl.lookupForAdd(l);
+    AddPtr lookupForAdd(const Lookup &l, bool useIdentity = true) const {
+        return impl.lookupForAdd(l, useIdentity);
     }
 
     template<typename KeyInput, typename ValueInput>
@@ -211,14 +211,14 @@ class HashMap
 
     /************************************************** Shorthand operations */
 
-    bool has(const Lookup &l) const {
-        return impl.lookup(l) != nullptr;
+    bool has(const Lookup &l, bool useIdentity = true) const {
+        return impl.lookup(l, useIdentity) != nullptr;
     }
 
     // Overwrite existing value with v. Return false on oom.
     template<typename KeyInput, typename ValueInput>
-    bool put(KeyInput &&k, ValueInput &&v) {
-        AddPtr p = lookupForAdd(k);
+    bool put(KeyInput &&k, ValueInput &&v, bool useIdentity = true) {
+        AddPtr p = lookupForAdd(k, useIdentity);
         if (p) {
             p->value() = mozilla::Forward<ValueInput>(v);
             return true;
@@ -243,8 +243,8 @@ class HashMap
     }
 
     // Remove if present.
-    void remove(const Lookup &l) {
-        if (Ptr p = lookup(l))
+    void remove(const Lookup &l, bool useIdentity = true) {
+        if (Ptr p = lookup(l, useIdentity))
             remove(p);
     }
 
@@ -256,8 +256,8 @@ class HashMap
     }
 
     // Infallibly rekey one entry, if present.
-    void rekeyAs(const Lookup &old_lookup, const Lookup &new_lookup, const Key &new_key) {
-        if (Ptr p = lookup(old_lookup))
+    void rekeyAs(const Lookup &old_lookup, const Lookup &new_lookup, const Key &new_key, bool useIdentity = true) {
+        if (Ptr p = lookup(old_lookup, useIdentity))
             impl.rekeyAndMaybeRehash(p, new_lookup, new_key);
     }
 
@@ -527,7 +527,7 @@ template <typename Key, size_t zeroBits>
 struct PointerHasher
 {
     typedef Key Lookup;
-    static HashNumber hash(const Lookup &l) {
+    static HashNumber hash(const Lookup &l, bool useIdentity = true) {
         MOZ_ASSERT(!JS::IsPoisonedPtr(l));
         size_t word = reinterpret_cast<size_t>(l) >> zeroBits;
         JS_STATIC_ASSERT(sizeof(HashNumber) == 4);
@@ -538,7 +538,7 @@ struct PointerHasher
         return HashNumber((word >> 32) ^ word);
 #endif
     }
-    static bool match(const Key &k, const Lookup &l) {
+    static bool match(const Key &k, const Lookup &l, bool useIdentity = true) {
         MOZ_ASSERT(!JS::IsPoisonedPtr(k));
         MOZ_ASSERT(!JS::IsPoisonedPtr(l));
         return k == l;
@@ -552,12 +552,16 @@ template <class Key>
 struct WeakMapHasher
 {
     typedef Key Lookup;
-    static HashNumber hash(const Lookup &l) {
+    static HashNumber hash(const Lookup &l, bool useIdentity) {
         // Hash if can implicitly cast to hash number type.
+        if (!useIdentity)
+            return OBJECT_TO_JSVAL(l).asRawBits();
         return OBJECT_TO_JSVAL(GetIdentityObject(NULL, l)).asRawBits();
     }
-    static bool match(const Key &k, const Lookup &l) {
+    static bool match(const Key &k, const Lookup &l, bool useIdentity = true) {
         // Use builtin or overloaded operator==.
+        if (!useIdentity)
+            return k == l;
         return GetIdentityObject(NULL, k) == GetIdentityObject(NULL, l);
     }
     static void rekey(Key &k, const Key& newKey) {
@@ -577,11 +581,11 @@ template <class Key>
 struct DefaultHasher
 {
     typedef Key Lookup;
-    static HashNumber hash(const Lookup &l) {
+    static HashNumber hash(const Lookup &l, bool useIdentity = true) {
         // Hash if can implicitly cast to hash number type.
         return l;
     }
-    static bool match(const Key &k, const Lookup &l) {
+    static bool match(const Key &k, const Lookup &l, bool useIdentity = true) {
         // Use builtin or overloaded operator==.
         return k == l;
     }
@@ -601,12 +605,12 @@ template <>
 struct DefaultHasher<double>
 {
     typedef double Lookup;
-    static HashNumber hash(double d) {
+    static HashNumber hash(double d, bool useIdentity = true) {
         JS_STATIC_ASSERT(sizeof(HashNumber) == 4);
         uint64_t u = mozilla::BitwiseCast<uint64_t>(d);
         return HashNumber(u ^ (u >> 32));
     }
-    static bool match(double lhs, double rhs) {
+    static bool match(double lhs, double rhs, bool useIdentity = true) {
         return mozilla::BitwiseCast<uint64_t>(lhs) == mozilla::BitwiseCast<uint64_t>(rhs);
     }
 };
@@ -615,11 +619,11 @@ template <>
 struct DefaultHasher<float>
 {
     typedef float Lookup;
-    static HashNumber hash(float f) {
+    static HashNumber hash(float f, bool useIdentity = true) {
         JS_STATIC_ASSERT(sizeof(HashNumber) == 4);
         return HashNumber(mozilla::BitwiseCast<uint32_t>(f));
     }
-    static bool match(float lhs, float rhs) {
+    static bool match(float lhs, float rhs, bool useIdentity = true) {
         return mozilla::BitwiseCast<uint32_t>(lhs) == mozilla::BitwiseCast<uint32_t>(rhs);
     }
 };
@@ -1056,9 +1060,9 @@ class HashTable : private AllocPolicy
         return Entry::isLiveHash(hash);
     }
 
-    static HashNumber prepareHash(const Lookup& l)
+    static HashNumber prepareHash(const Lookup& l, bool useIdentity = true)
     {
-        HashNumber keyHash = ScrambleHashCode(HashPolicy::hash(l));
+        HashNumber keyHash = ScrambleHashCode(HashPolicy::hash(l, useIdentity), useIdentity);
 
         // Avoid reserved hash codes.
         if (!isLiveHash(keyHash))
@@ -1199,12 +1203,12 @@ class HashTable : private AllocPolicy
         return wouldBeUnderloaded(capacity(), entryCount);
     }
 
-    static bool match(Entry &e, const Lookup &l)
+    static bool match(Entry &e, const Lookup &l, bool useIdentity = true)
     {
-        return HashPolicy::match(HashPolicy::getKey(e.get()), l);
+        return HashPolicy::match(HashPolicy::getKey(e.get()), l, useIdentity);
     }
 
-    Entry &lookup(const Lookup &l, HashNumber keyHash, unsigned collisionBit) const
+    Entry &lookup(const Lookup &l, HashNumber keyHash, unsigned collisionBit, bool useIdentity = true) const
     {
         MOZ_ASSERT(isLiveHash(keyHash));
         MOZ_ASSERT(!(keyHash & sCollisionBit));
@@ -1223,7 +1227,7 @@ class HashTable : private AllocPolicy
         }
 
         // Hit: return entry.
-        if (entry->matchHash(keyHash) && match(*entry, l)) {
+        if (entry->matchHash(keyHash) && match(*entry, l, useIdentity)) {
             METER(stats.hits++);
             return *entry;
         }
@@ -1251,7 +1255,7 @@ class HashTable : private AllocPolicy
                 return firstRemoved ? *firstRemoved : *entry;
             }
 
-            if (entry->matchHash(keyHash) && match(*entry, l)) {
+            if (entry->matchHash(keyHash) && match(*entry, l, useIdentity)) {
                 METER(stats.hits++);
                 return *entry;
             }
@@ -1519,24 +1523,24 @@ class HashTable : private AllocPolicy
         return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
     }
 
-    Ptr lookup(const Lookup &l) const
+    Ptr lookup(const Lookup &l, bool useIdentity = true) const
     {
         mozilla::ReentrancyGuard g(*this);
-        HashNumber keyHash = prepareHash(l);
-        return Ptr(lookup(l, keyHash, 0), *this);
+        HashNumber keyHash = prepareHash(l, useIdentity);
+        return Ptr(lookup(l, keyHash, 0, useIdentity), *this);
     }
 
-    Ptr readonlyThreadsafeLookup(const Lookup &l) const
+    Ptr readonlyThreadsafeLookup(const Lookup &l, bool useIdentity = true) const
     {
-        HashNumber keyHash = prepareHash(l);
-        return Ptr(lookup(l, keyHash, 0), *this);
+        HashNumber keyHash = prepareHash(l, useIdentity);
+        return Ptr(lookup(l, keyHash, 0, useIdentity), *this);
     }
 
-    AddPtr lookupForAdd(const Lookup &l) const
+    AddPtr lookupForAdd(const Lookup &l, bool useIdentity = true) const
     {
         mozilla::ReentrancyGuard g(*this);
-        HashNumber keyHash = prepareHash(l);
-        Entry &entry = lookup(l, keyHash, sCollisionBit);
+        HashNumber keyHash = prepareHash(l, useIdentity);
+        Entry &entry = lookup(l, keyHash, sCollisionBit, useIdentity);
         AddPtr p(entry, *this, keyHash);
         return p;
     }
@@ -1577,11 +1581,11 @@ class HashTable : private AllocPolicy
     // Note: |l| may be a reference to a piece of |u|, so this function
     // must take care not to use |l| after moving |u|.
     template <class U>
-    void putNewInfallible(const Lookup &l, U &&u)
+    void putNewInfallible(const Lookup &l, U &&u, bool useIdentity = true)
     {
         MOZ_ASSERT(table);
 
-        HashNumber keyHash = prepareHash(l);
+        HashNumber keyHash = prepareHash(l, useIdentity);
         Entry *entry = &findFreeEntry(keyHash);
 
         if (entry->isRemoved()) {
@@ -1610,7 +1614,7 @@ class HashTable : private AllocPolicy
     // Note: |l| may be a reference to a piece of |u|, so this function
     // must take care not to use |l| after moving |u|.
     template <class U>
-    bool relookupOrAdd(AddPtr& p, const Lookup &l, U &&u)
+    bool relookupOrAdd(AddPtr& p, const Lookup &l, U &&u, bool useIdentity = true)
     {
 #ifdef DEBUG
         p.generation = generation();
@@ -1618,8 +1622,8 @@ class HashTable : private AllocPolicy
 #endif
         {
             mozilla::ReentrancyGuard g(*this);
-            MOZ_ASSERT(prepareHash(l) == p.keyHash); // l has not been destroyed
-            p.entry_ = &lookup(l, p.keyHash, sCollisionBit);
+            MOZ_ASSERT(prepareHash(l, useIdentity) == p.keyHash); // l has not been destroyed
+            p.entry_ = &lookup(l, p.keyHash, sCollisionBit, useIdentity);
         }
         return p.found() || add(p, mozilla::Forward<U>(u));
     }

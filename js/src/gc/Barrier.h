@@ -713,8 +713,8 @@ struct PreBarrieredHasher
     typedef PreBarriered<T> Key;
     typedef T Lookup;
 
-    static HashNumber hash(Lookup obj) { return DefaultHasher<T>::hash(obj); }
-    static bool match(const Key &k, Lookup l) { return k.get() == l; }
+    static HashNumber hash(Lookup obj, bool useIdentity = true) { return DefaultHasher<T>::hash(obj); }
+    static bool match(const Key &k, Lookup l, bool useIdentity = true) { return k.get() == l; }
     static void rekey(Key &k, const Key& newKey) { k.unsafeSet(newKey); }
 };
 

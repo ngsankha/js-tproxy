@@ -1065,12 +1065,12 @@ struct GCChunkHasher {
      * Strip zeros for better distribution after multiplying by the golden
      * ratio.
      */
-    static HashNumber hash(gc::Chunk *chunk) {
+    static HashNumber hash(gc::Chunk *chunk, bool useIdentity = true) {
         JS_ASSERT(!(uintptr_t(chunk) & gc::ChunkMask));
         return HashNumber(uintptr_t(chunk) >> gc::ChunkShift);
     }
 
-    static bool match(gc::Chunk *k, gc::Chunk *l) {
+    static bool match(gc::Chunk *k, gc::Chunk *l, bool useIdentity = true) {
         JS_ASSERT(!(uintptr_t(k) & gc::ChunkMask));
         JS_ASSERT(!(uintptr_t(l) & gc::ChunkMask));
         return k == l;

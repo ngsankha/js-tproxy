@@ -1236,8 +1236,8 @@ struct TypeObjectWithNewScriptEntry
 
     };
 
-    static inline HashNumber hash(const Lookup &lookup);
-    static inline bool match(const TypeObjectWithNewScriptEntry &key, const Lookup &lookup);
+    static inline HashNumber hash(const Lookup &lookup, bool useIdentity);
+    static inline bool match(const TypeObjectWithNewScriptEntry &key, const Lookup &lookup, bool useIdentity);
     static void rekey(TypeObjectWithNewScriptEntry &k, const TypeObjectWithNewScriptEntry& newKey) { k = newKey; }
 };
 typedef HashSet<TypeObjectWithNewScriptEntry,

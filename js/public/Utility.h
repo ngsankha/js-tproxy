@@ -429,7 +429,7 @@ namespace detail {
  * FIXME: OrderedHashTable uses a bit-mask; see bug 775896.
  */
 inline HashNumber
-ScrambleHashCode(HashNumber h)
+ScrambleHashCode(HashNumber h, bool useIdentity = true)
 {
     /*
      * Simply returning h would not cause any hash tables to produce wrong

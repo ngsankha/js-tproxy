@@ -36,10 +36,10 @@ HashId(jsid id)
 struct JsidHasher
 {
     typedef jsid Lookup;
-    static HashNumber hash(const Lookup &l) {
+    static HashNumber hash(const Lookup &l, bool useIdentity = true) {
         return HashNumber(JSID_BITS(l));
     }
-    static bool match(const jsid &id, const Lookup &l) {
+    static bool match(const jsid &id, const Lookup &l, bool useIdentity = true) {
         return id == l;
     }
 };
@@ -99,8 +99,8 @@ struct AtomHasher
         inline explicit Lookup(const JSAtom *atom);
     };
 
-    static HashNumber hash(const Lookup &l) { return l.hash; }
-    static inline bool match(const AtomStateEntry &entry, const Lookup &lookup);
+    static HashNumber hash(const Lookup &l, bool useIdentity = true) { return l.hash; }
+    static inline bool match(const AtomStateEntry &entry, const Lookup &lookup, bool useIdentity);
     static void rekey(AtomStateEntry &k, const AtomStateEntry& newKey) { k = newKey; }
 };
 

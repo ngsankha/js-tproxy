@@ -973,14 +973,14 @@ class MOZ_STACK_CLASS ModuleCompiler
 
         // ExitDescriptor is a HashPolicy:
         typedef ExitDescriptor Lookup;
-        static HashNumber hash(const ExitDescriptor &d) {
+        static HashNumber hash(const ExitDescriptor &d, bool useIdentity = true) {
             HashNumber hn = HashGeneric(d.name_, d.sig_.retType().which());
             const VarTypeVector &args = d.sig_.args();
             for (unsigned i = 0; i < args.length(); i++)
                 hn = AddToHash(hn, args[i].which());
             return hn;
         }
-        static bool match(const ExitDescriptor &lhs, const ExitDescriptor &rhs) {
+        static bool match(const ExitDescriptor &lhs, const ExitDescriptor &rhs, bool useIdentity = true) {
             return lhs.name_ == rhs.name_ && lhs.sig_ == rhs.sig_;
         }
     };

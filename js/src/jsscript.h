@@ -1906,8 +1906,8 @@ struct ScriptBytecodeHasher
 
         explicit Lookup(SharedScriptData *ssd) : code(ssd->data), length(ssd->length) {}
     };
-    static HashNumber hash(const Lookup &l) { return mozilla::HashBytes(l.code, l.length); }
-    static bool match(SharedScriptData *entry, const Lookup &lookup) {
+    static HashNumber hash(const Lookup &l, bool useIdentity = true) { return mozilla::HashBytes(l.code, l.length); }
+    static bool match(SharedScriptData *entry, const Lookup &lookup, bool useIdentity = true) {
         if (entry->length != lookup.length)
             return false;
         return mozilla::PodEqual<jsbytecode>(entry->data, lookup.code, lookup.length);

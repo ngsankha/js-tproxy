@@ -143,7 +143,7 @@ AtomHasher::Lookup::Lookup(const JSAtom *atom)
 }
 
 inline bool
-AtomHasher::match(const AtomStateEntry &entry, const Lookup &lookup)
+AtomHasher::match(const AtomStateEntry &entry, const Lookup &lookup, bool useIdentity = true)
 {
     JSAtom *key = entry.asPtr();
     if (lookup.atom)

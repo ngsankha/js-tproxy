@@ -320,10 +320,10 @@ class RegExpCompartment
         { }
 
         typedef Key Lookup;
-        static HashNumber hash(const Lookup &l) {
+        static HashNumber hash(const Lookup &l, bool useIdentity) {
             return DefaultHasher<JSAtom *>::hash(l.atom) ^ (l.flag << 1);
         }
-        static bool match(Key l, Key r) {
+        static bool match(Key l, Key r, bool useIdentity = true) {
             return l.atom == r.atom && l.flag == r.flag;
         }
     };

@@ -23,7 +23,7 @@ using mozilla::HashString;
 namespace js {
 
 /* static */ HashNumber
-SavedFrame::HashPolicy::hash(const Lookup &lookup)
+SavedFrame::HashPolicy::hash(const Lookup &lookup, bool useIdentity = true)
 {
     return AddToHash(HashString(lookup.source->chars(), lookup.source->length()),
                      lookup.line,
@@ -34,7 +34,7 @@ SavedFrame::HashPolicy::hash(const Lookup &lookup)
 }
 
 /* static */ bool
-SavedFrame::HashPolicy::match(SavedFrame *existing, const Lookup &lookup)
+SavedFrame::HashPolicy::match(SavedFrame *existing, const Lookup &lookup, bool useIdentity = true)
 {
     if (existing->getLine() != lookup.line)
         return false;

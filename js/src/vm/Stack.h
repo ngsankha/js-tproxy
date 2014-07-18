@@ -1116,11 +1116,11 @@ template <>
 struct DefaultHasher<AbstractFramePtr> {
     typedef AbstractFramePtr Lookup;
 
-    static js::HashNumber hash(const Lookup &key) {
+    static js::HashNumber hash(const Lookup &key, bool useIdentity = true) {
         return size_t(key.raw());
     }
 
-    static bool match(const AbstractFramePtr &k, const Lookup &l) {
+    static bool match(const AbstractFramePtr &k, const Lookup &l, bool useIdentity = true) {
         return k == l;
     }
 };

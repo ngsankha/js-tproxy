@@ -705,8 +705,8 @@ class ScopeIterKey
 
     /* For use as hash policy */
     typedef ScopeIterKey Lookup;
-    static HashNumber hash(ScopeIterKey si);
-    static bool match(ScopeIterKey si1, ScopeIterKey si2);
+    static HashNumber hash(ScopeIterKey si, bool useIdentity);
+    static bool match(ScopeIterKey si1, ScopeIterKey si2, bool useIdentity);
     bool operator!=(const ScopeIterKey &other) const {
         return frame_ != other.frame_ ||
                cur_ != other.cur_ ||

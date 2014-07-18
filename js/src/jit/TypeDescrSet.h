@@ -189,9 +189,9 @@ class TypeDescrSet {
 struct TypeDescrSetHasher
 {
     typedef TypeDescrSet Lookup;
-    static HashNumber hash(TypeDescrSet key);
+    static HashNumber hash(TypeDescrSet key, bool useIdentity);
     static bool match(TypeDescrSet key1,
-                      TypeDescrSet key2);
+                      TypeDescrSet key2, bool useIdentity);
 };
 
 typedef js::HashSet<TypeDescrSet,

@@ -93,12 +93,12 @@ struct CrossCompartmentKey
 
 struct WrapperHasher : public DefaultHasher<CrossCompartmentKey>
 {
-    static HashNumber hash(const CrossCompartmentKey &key) {
+    static HashNumber hash(const CrossCompartmentKey &key, bool useIdentity = true) {
         JS_ASSERT(!IsPoisonedPtr(key.wrapped));
         return uint32_t(uintptr_t(key.wrapped)) | uint32_t(key.kind);
     }
 
-    static bool match(const CrossCompartmentKey &l, const CrossCompartmentKey &k) {
+    static bool match(const CrossCompartmentKey &l, const CrossCompartmentKey &k, bool useIdentity = true) {
         return l.kind == k.kind && l.debugger == k.debugger && l.wrapped == k.wrapped;
     }
 };

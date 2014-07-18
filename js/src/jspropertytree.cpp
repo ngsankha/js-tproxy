@@ -19,13 +19,13 @@
 using namespace js;
 
 inline HashNumber
-ShapeHasher::hash(const Lookup &l)
+ShapeHasher::hash(const Lookup &l, bool useIdentity = true)
 {
     return l.hash();
 }
 
 inline bool
-ShapeHasher::match(const Key k, const Lookup &l)
+ShapeHasher::match(const Key k, const Lookup &l, bool useIdentity = true)
 {
     return k->matches(l);
 }

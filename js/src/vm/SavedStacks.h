@@ -107,8 +107,8 @@ struct SavedFrame::HashPolicy
     typedef PointerHasher<SavedFrame *, 3>   SavedFramePtrHasher;
     typedef PointerHasher<JSPrincipals *, 3> JSPrincipalsPtrHasher;
 
-    static HashNumber hash(const Lookup &lookup);
-    static bool       match(SavedFrame *existing, const Lookup &lookup);
+    static HashNumber hash(const Lookup &lookup, bool useIdentity);
+    static bool       match(SavedFrame *existing, const Lookup &lookup, bool useIdentity);
 
     typedef SavedFrame* Key;
     static void rekey(Key &key, const Key &newKey);

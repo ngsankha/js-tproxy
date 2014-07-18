@@ -18,7 +18,7 @@ using namespace jit;
 // TypeDescrSet hasher
 
 HashNumber
-TypeDescrSetHasher::hash(TypeDescrSet key)
+TypeDescrSetHasher::hash(TypeDescrSet key, bool useIdentity = true)
 {
     HashNumber hn = mozilla::HashGeneric(key.length());
     for (size_t i = 0; i < key.length(); i++)
@@ -27,7 +27,7 @@ TypeDescrSetHasher::hash(TypeDescrSet key)
 }
 
 bool
-TypeDescrSetHasher::match(TypeDescrSet key1, TypeDescrSet key2)
+TypeDescrSetHasher::match(TypeDescrSet key1, TypeDescrSet key2, bool useIdentity = true)
 {
     if (key1.length() != key2.length())
         return false;

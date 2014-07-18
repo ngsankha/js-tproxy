@@ -518,6 +518,8 @@ class ObjectImpl : public gc::BarrieredCell<ObjectImpl>
         SENTINEL_ALLOWED
     };
 
+    bool isTransparentProxy() const;
+
     /*
      * Check that slot is in range for the object's allocated slots.
      * If sentinelAllowed then slot may equal the slot capacity.

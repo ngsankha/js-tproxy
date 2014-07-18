@@ -630,11 +630,11 @@ struct AllocationSiteKey : public DefaultHasher<AllocationSiteKey> {
 
     AllocationSiteKey() { mozilla::PodZero(this); }
 
-    static inline uint32_t hash(AllocationSiteKey key) {
+    static inline uint32_t hash(AllocationSiteKey key, bool useIdentity = true) {
         return uint32_t(size_t(key.script->offsetToPC(key.offset)) ^ key.kind);
     }
 
-    static inline bool match(const AllocationSiteKey &a, const AllocationSiteKey &b) {
+    static inline bool match(const AllocationSiteKey &a, const AllocationSiteKey &b, bool useIdentity = true) {
         return a.script == b.script && a.offset == b.offset && a.kind == b.kind;
     }
 };

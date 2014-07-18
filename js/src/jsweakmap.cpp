@@ -367,7 +367,7 @@ WeakMapPostWriteBarrier(JSRuntime *rt, ObjectValueMap *weakMap, JSObject *key)
 
 MOZ_ALWAYS_INLINE bool
 SetWeakMapEntryInternal(JSContext *cx, Handle<WeakMapObject*> mapObj,
-                        HandleObject key, HandleValue value)
+                        HandleObject key, HandleValue value, bool useIdentity)
 {
     ObjectValueMap *map = mapObj->getMap();
     if (!map) {
@@ -394,7 +394,7 @@ SetWeakMapEntryInternal(JSContext *cx, Handle<WeakMapObject*> mapObj,
 
     JS_ASSERT(key->compartment() == mapObj->compartment());
     JS_ASSERT_IF(value.isObject(), value.toObject().compartment() == mapObj->compartment());
-    if (!map->put(key.get(), value)) {
+    if (!map->put(key.get(), value, useIdentity)) {
         JS_ReportOutOfMemory(cx);
         return false;
     }
@@ -416,12 +416,21 @@ WeakMap_set_impl(JSContext *cx, CallArgs args)
     if (!key)
         return false;
 
+    bool useIdentity = true;
+
     RootedValue value(cx, (args.length() > 1) ? args[1] : UndefinedValue());
     Rooted<JSObject*> thisObj(cx, &args.thisv().toObject());
     Rooted<WeakMapObject*> map(cx, &thisObj->as<WeakMapObject>());
 
+    if (IsTransparentProxy(key) && thisObj->getSlot(0).isObject()) {
+        JSObject *capability = &thisObj->getSlot(0).toObject();
+        JSObject *secret = &key->as<ProxyObject>().extra(1).toObject();
+        if (secret == capability)
+            useIdentity = false;
+    }
+
     args.rval().setUndefined();
-    return SetWeakMapEntryInternal(cx, map, key, value);
+    return SetWeakMapEntryInternal(cx, map, key, value, useIdentity);
 }
 
 static bool
@@ -502,7 +511,7 @@ JS::GetWeakMapEntry(JSContext *cx, HandleObject mapObj, HandleObject key,
     ObjectValueMap *map = mapObj->as<WeakMapObject>().getMap();
     if (!map)
         return true;
-    if (ObjectValueMap::Ptr ptr = map->lookup(key.get())) {
+    if (ObjectValueMap::Ptr ptr = map->lookup(key.get(), true)) {
         // Read barrier to prevent an incorrectly gray value from escaping the
         // weak map. See the comment before UnmarkGrayChildren in gc/Marking.cpp
         ExposeValueToActiveJS(ptr->value().get());
@@ -518,7 +527,7 @@ JS::SetWeakMapEntry(JSContext *cx, HandleObject mapObj, HandleObject key,
     CHECK_REQUEST(cx);
     assertSameCompartment(cx, key, val);
     Rooted<WeakMapObject*> rootedMap(cx, &mapObj->as<WeakMapObject>());
-    return SetWeakMapEntryInternal(cx, rootedMap, key, val);
+    return SetWeakMapEntryInternal(cx, rootedMap, key, val, true);
 }
 
 static bool
@@ -528,6 +537,9 @@ WeakMap_construct(JSContext *cx, unsigned argc, Value *vp)
     JSObject *obj = NewBuiltinClassInstance(cx, &WeakMapObject::class_);
     if (!obj)
         return false;
+
+    if (args.length() > 0)
+        obj->setSlot(0, ObjectOrNullValue(&args[0].toObject()));
 
     args.rval().setObject(*obj);
     return true;

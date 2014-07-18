@@ -45,7 +45,7 @@ IsEvalCacheCandidate(JSScript *script)
 }
 
 /* static */ HashNumber
-EvalCacheHashPolicy::hash(const EvalCacheLookup &l)
+EvalCacheHashPolicy::hash(const EvalCacheLookup &l, bool useIdentity = true)
 {
     return AddToHash(HashString(l.str->chars(), l.str->length()),
                      l.callerScript.get(),
@@ -54,7 +54,7 @@ EvalCacheHashPolicy::hash(const EvalCacheLookup &l)
 }
 
 /* static */ bool
-EvalCacheHashPolicy::match(const EvalCacheEntry &cacheEntry, const EvalCacheLookup &l)
+EvalCacheHashPolicy::match(const EvalCacheEntry &cacheEntry, const EvalCacheLookup &l, bool useIdentity = true)
 {
     JSScript *script = cacheEntry.script;
 

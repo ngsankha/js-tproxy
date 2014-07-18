@@ -19,11 +19,11 @@ class ValueNumberer
     {
         typedef MDefinition * Lookup;
         typedef MDefinition * Key;
-        static HashNumber hash(const Lookup &ins) {
+        static HashNumber hash(const Lookup &ins, bool useIdentity = true) {
             return ins->valueHash();
         }
 
-        static bool match(const Key &k, const Lookup &l) {
+        static bool match(const Key &k, const Lookup &l, bool useIdentity = true) {
             // If one of the instructions depends on a store, and the
             // other instruction does not depend on the same store,
             // the instructions are not congruent.

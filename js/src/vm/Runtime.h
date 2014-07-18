@@ -154,8 +154,8 @@ struct EvalCacheHashPolicy
 {
     typedef EvalCacheLookup Lookup;
 
-    static HashNumber hash(const Lookup &l);
-    static bool match(const EvalCacheEntry &entry, const EvalCacheLookup &l);
+    static HashNumber hash(const Lookup &l, bool useIdentity);
+    static bool match(const EvalCacheEntry &entry, const EvalCacheLookup &l, bool useIdentity);
 };
 
 typedef HashSet<EvalCacheEntry, EvalCacheHashPolicy, SystemAllocPolicy> EvalCache;

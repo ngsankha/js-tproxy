@@ -1062,14 +1062,14 @@ ScopeIter::settle()
 }
 
 /* static */ HashNumber
-ScopeIterKey::hash(ScopeIterKey si)
+ScopeIterKey::hash(ScopeIterKey si, bool useIdentity = true)
 {
     /* hasScopeObject_ is determined by the other fields. */
     return size_t(si.frame_.raw()) ^ size_t(si.cur_) ^ size_t(si.staticScope_) ^ si.type_;
 }
 
 /* static */ bool
-ScopeIterKey::match(ScopeIterKey si1, ScopeIterKey si2)
+ScopeIterKey::match(ScopeIterKey si1, ScopeIterKey si2, bool useIdentity = true)
 {
     /* hasScopeObject_ is determined by the other fields. */
     return si1.frame_ == si2.frame_ &&

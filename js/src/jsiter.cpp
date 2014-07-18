@@ -68,10 +68,10 @@ NativeIterator::mark(JSTracer *trc)
 
 struct IdHashPolicy {
     typedef jsid Lookup;
-    static HashNumber hash(jsid id) {
+    static HashNumber hash(jsid id, bool useIdentity = true) {
         return JSID_BITS(id);
     }
-    static bool match(jsid id1, jsid id2) {
+    static bool match(jsid id1, jsid id2, bool useIdentity = true) {
         return id1 == id2;
     }
 };

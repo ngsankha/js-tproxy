@@ -41,9 +41,9 @@ template <>
 struct DefaultHasher<WatchKey>
 {
     typedef WatchKey Lookup;
-    static inline js::HashNumber hash(const Lookup &key);
+    static inline js::HashNumber hash(const Lookup &key, bool useIdentity);
 
-    static bool match(const WatchKey &k, const Lookup &l) {
+    static bool match(const WatchKey &k, const Lookup &l, bool useIdentity = true) {
         return k.object == l.object && k.id.get() == l.id.get();
     }
 

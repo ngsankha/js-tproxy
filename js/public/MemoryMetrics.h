@@ -73,15 +73,15 @@ JS_FRIEND_API(size_t) MemoryReportingSundriesThreshold();
 struct InefficientNonFlatteningStringHashPolicy
 {
     typedef JSString *Lookup;
-    static HashNumber hash(const Lookup &l);
-    static bool match(const JSString *const &k, const Lookup &l);
+    static HashNumber hash(const Lookup &l, bool useIdentity);
+    static bool match(const JSString *const &k, const Lookup &l, bool useIdentity);
 };
 
 struct CStringHashPolicy
 {
     typedef const char *Lookup;
-    static HashNumber hash(const Lookup &l);
-    static bool match(const char *const &k, const Lookup &l);
+    static HashNumber hash(const Lookup &l, bool useIdentity);
+    static bool match(const char *const &k, const Lookup &l, bool useIdentity);
 };
 
 // This file features many classes with numerous size_t fields, and each such

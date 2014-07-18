@@ -1423,7 +1423,7 @@ Shape::setObjectFlag(ExclusiveContext *cx, BaseShape::Flag flag, TaggedProto pro
 }
 
 /* static */ inline HashNumber
-StackBaseShape::hash(const StackBaseShape *base)
+StackBaseShape::hash(const StackBaseShape *base, bool useIdentity = true)
 {
     HashNumber hash = base->flags;
     hash = RotateLeft(hash, 4) ^ (uintptr_t(base->clasp) >> 3);
@@ -1435,7 +1435,7 @@ StackBaseShape::hash(const StackBaseShape *base)
 }
 
 /* static */ inline bool
-StackBaseShape::match(UnownedBaseShape *key, const StackBaseShape *lookup)
+StackBaseShape::match(UnownedBaseShape *key, const StackBaseShape *lookup, bool useIdentity = true)
 {
     return key->flags == lookup->flags
         && key->clasp_ == lookup->clasp
@@ -1566,7 +1566,7 @@ InitialShapeEntry::getLookup() const
 }
 
 /* static */ inline HashNumber
-InitialShapeEntry::hash(const Lookup &lookup)
+InitialShapeEntry::hash(const Lookup &lookup, bool useIdentity = true)
 {
     HashNumber hash = uintptr_t(lookup.clasp) >> 3;
     hash = RotateLeft(hash, 4) ^
@@ -1578,7 +1578,7 @@ InitialShapeEntry::hash(const Lookup &lookup)
 }
 
 /* static */ inline bool
-InitialShapeEntry::match(const InitialShapeEntry &key, const Lookup &lookup)
+InitialShapeEntry::match(const InitialShapeEntry &key, const Lookup &lookup, bool useIdentity = true)
 {
     const Shape *shape = *key.shape.unsafeGet();
     return lookup.clasp == shape->getObjectClass()

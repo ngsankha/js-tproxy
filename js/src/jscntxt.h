@@ -51,11 +51,11 @@ struct CallsiteCloneKey {
 
     typedef CallsiteCloneKey Lookup;
 
-    static inline uint32_t hash(CallsiteCloneKey key) {
+    static inline uint32_t hash(CallsiteCloneKey key, bool useIdentity = true) {
         return uint32_t(size_t(key.script->offsetToPC(key.offset)) ^ size_t(key.original));
     }
 
-    static inline bool match(const CallsiteCloneKey &a, const CallsiteCloneKey &b) {
+    static inline bool match(const CallsiteCloneKey &a, const CallsiteCloneKey &b, bool useIdentity = true) {
         return a.script == b.script && a.offset == b.offset && a.original == b.original;
     }
 };

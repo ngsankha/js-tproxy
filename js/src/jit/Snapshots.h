@@ -302,10 +302,10 @@ class RValueAllocation
     {
         typedef RValueAllocation Key;
         typedef Key Lookup;
-        static HashNumber hash(const Lookup &v) {
+        static HashNumber hash(const Lookup &v, bool useIdentity = true) {
             return v.hash();
         }
-        static bool match(const Key &k, const Lookup &l) {
+        static bool match(const Key &k, const Lookup &l, bool useIdentity = true) {
             return k == l;
         }
     };
